@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import * as THREE from 'three';
+import { InsertTool, DeleteTool } from './voxelClasses/classes.js';
 
 @Injectable({
   providedIn: 'root'
@@ -7,4 +7,11 @@ import * as THREE from 'three';
 export class VoxelsToolService {
 
   constructor() { }
+
+  public voxels_tool() {
+    return {
+      InsertTool: InsertTool,
+      DeleteTool: DeleteTool
+    };
+  }
 }
