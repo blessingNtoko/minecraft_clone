@@ -98,7 +98,7 @@ export class InsertTool {
       intersections[0].cell._cells[k].luminance = this._luminance;
     }
   }
-}
+};
 
 export class DeleteTool {
   constructor(parent) {
@@ -111,6 +111,46 @@ export class DeleteTool {
   LoseFocus() {
     if (this._prev) {
       this._prev.cell._cells[this._prev.voxel.key].luminance = 1;
+      this._parent.MarkDirty(this._prev.cell);
     }
   }
-}
+
+  PerformAction() {
+    const camera = this._parent._game._graphics._camera;
+    const forward = new THREE.Vector3(0, 0, -1);
+    forward.applyQuaternion(camera.quaternion);
+
+    const ray = new THREE.Ray(camera.position, forward);
+    const intersections = this._parent._FindIntersections(ray, 5);
+    if (!intersections.length) {
+      return;
+    }
+
+    intersections[0].cell.RemoveVoxel(intersections[0].voxel.key);
+  }
+
+  Update(timeInSec) {
+    this.LoseFocus();
+
+    const camera = this._parent._game._graphics._camera;
+    const forward = new THREE.Vector3(0, 0, -1);
+    forward.applyQuaternion(camera.quaternion);
+
+    const ray = new THREE.Ray(camera.position, forward);
+    const intersections = this._parent._FindIntersections(ray, 5);
+    if (intersections.length) {
+      this._prev = intersections[0];
+      this._blinkTimer -= timeInSec;
+      if (this._blinkTimer < 0) {
+        this._blinkTimer = 0.25;
+        if (this._luminance == 1)  {
+          this._luminance = 2;
+        } else {
+          this._luminance = 1;
+        }
+      }
+      intersections[0].cell._cells[intersections[0].voxel.key].luminance = this._luminance;
+      this._parent.MarkDirty(intersections[0].cell);
+    }
+  }
+};
