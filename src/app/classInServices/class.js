@@ -81,7 +81,36 @@ export class InsertTool {
       if (cur.cell.HasVoxelAt(newVoxel.position[0], newVoxel.position[1], newVoxel.position[2])) {
         return;
       }
-    }
 
+      this._prev = cur;
+      this._prevVoxel = newVoxel;
+      this._blinkTimer -= timeInSec;
+      if (this._blinkTimer < 0) {
+        this._blinkTimer = 0.25;
+        if (this._luminance == 1) {
+          this._luminance = 2;
+        } else {
+          this._luminance = 1;
+        }
+      }
+      const k = cur.cell._Key(newVoxel.position[0], newVoxel.position[1], newVoxel.position[2]);
+      intersections[0].cell.InsertVoxel(newVoxel);
+      intersections[0].cell._cells[k].luminance = this._luminance;
+    }
+  }
+}
+
+export class DeleteTool {
+  constructor(parent) {
+    this._parent = parent;
+    this._cell = null;
+    this._blinkTimer = 0;
+    this._luminance = 1;
+  }
+
+  LoseFocus() {
+    if (this._prev) {
+      this._prev.cell._cells[this._prev.voxel.key].luminance = 1;
+    }
   }
 }
