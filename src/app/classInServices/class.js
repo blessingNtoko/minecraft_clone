@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+
 export class InsertTool {
   constructor(parent) {
     this._parent = parent;
@@ -9,7 +11,7 @@ export class InsertTool {
 
   LoseFocus() {
     if (this.prev) {
-      this._parent.MarkDirty(this.prev.cell);
+      this._parent.MarkDirty(this._prev.cell);
       this._prev.cell.RemoveVoxel(
         this._prev.cell._Key(
           this._prevVoxel.position[0],
@@ -20,5 +22,66 @@ export class InsertTool {
       this._prev = null;
       this._prevVoxel = null;
     }
+  }
+
+  PerformAction() {
+    this.LoseFocus();
+
+    const camera = this._parent._game._graphics._camera;
+    const forward = new THREE.Vector3(0, 0, -1);
+    forward.applyQuaternion(camera.quaternion);
+
+    const ray = new THREE.Ray(camera.position, forward);
+    const intersections = this._parent._FindIntersections(ray, 5);
+    if (!intersections.length) {
+      return;
+    }
+
+    const possibleCoords = [...intersections[0].voxel.position];
+    possibleCoords[1] += 1;
+
+    if (intersections[0].cell.HasVoxelAt(
+      possibleCoords[0], possibleCoords[1], possibleCoords[2]
+    )) {
+      intersections[0].cell.InsertVoxel({
+        position: [...possibleCoords],
+        type: 'stone',
+        visible: true
+      }, true);
+    }
+  }
+
+  Update(timeInSec) {
+    const camera = this._parent._game._graphics._camera;
+    const forward = new THREE.Vector3(0, 0, -1);
+    forward.applyQuaternion(camera.quaternion);
+
+    const ray = new THREE.Ray(camera.position, forward);
+    const intersections = this._parent._FindIntersections(ray, 5);
+    if (intersections.length) {
+      if (this._prev) {
+        this._parent.MarkDirty(this._prev.cell);
+        this._prev.cell.RemoveVoxel(
+          this._prev.cell._Key(
+            this._prevVoxel.position[0],
+            this._prevVoxel.position[1],
+            this._prevVoxel.position[2],
+          )
+        )
+      }
+      const cur = intersections[0];
+      const newVoxel = {
+        position: [...cur.voxel.position],
+        visible: true,
+        type: 'stone',
+        blinker: true
+      };
+      newVoxel.position[1] += 1;
+
+      if (cur.cell.HasVoxelAt(newVoxel.position[0], newVoxel.position[1], newVoxel.position[2])) {
+        return;
+      }
+    }
+
   }
 }
